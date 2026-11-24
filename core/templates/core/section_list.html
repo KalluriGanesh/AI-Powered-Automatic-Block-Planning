@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Railway Sections - Block Planner{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">Railway Sections</h1>
+        <span class="badge badge-info">{{ sections|length }} Total Sections</span>
+    </div>
+
+    <p style="margin-bottom: 16px; color: var(--text-muted);">
+        Corridor sections with operational length, availability status, and registered track/OHE/signal assets.
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Section Name</th>
+                <th>Length</th>
+                <th>Availability</th>
+                <th>Assets</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in sections %}
+            <tr>
+                <td><strong>{{ s.code }}</strong></td>
+                <td>{{ s.name }}</td>
+                <td>{{ s.length_km }} km</td>
+                <td>
+                    {% if s.is_blocked %}
+                    <span class="badge badge-danger">BLOCKED</span>
+                    {% else %}
+                    <span class="badge badge-success">OPERATIONAL</span>
+                    {% endif %}
+                </td>
+                <td>{{ s.assets.count }} assets</td>
+                <td>
+                    <a href="{% url 'core:section_detail' s.code %}" class="btn btn-outline btn-sm">View Heat Table & Assets &rarr;</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 24px;">
+                    No sections found. Run <code>python manage.py seed_data</code> to initialize synthetic railway data.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

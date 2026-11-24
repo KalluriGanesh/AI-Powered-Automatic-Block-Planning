@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Railway Assets - Block Planner{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">Railway Maintenance Assets</h1>
+        <span class="badge badge-info">{{ assets|length }} Assets Displayed</span>
+    </div>
+
+    <form method="get" class="filter-bar">
+        <div>
+            <label for="section" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px;">Filter by Section:</label>
+            <select name="section" id="section" class="form-control">
+                <option value="">-- All Sections --</option>
+                {% for s in sections %}
+                <option value="{{ s.code }}" {% if selected_section == s.code %}selected{% endif %}>
+                    {{ s.code }} ({{ s.name }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="asset_type" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px;">Filter by Asset Type:</label>
+            <select name="asset_type" id="asset_type" class="form-control">
+                <option value="">-- All Types --</option>
+                {% for code, label in asset_types %}
+                <option value="{{ code }}" {% if selected_type == code %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="align-self: flex-end;">
+            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+            <a href="{% url 'core:asset_list' %}" class="btn btn-outline btn-sm">Reset</a>
+        </div>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Asset Name</th>
+                <th>Section</th>
+                <th>Asset Type</th>
+                <th>Health Score</th>
+                <th>Condition</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in assets %}
+            <tr>
+                <td><strong>{{ a.name }}</strong></td>
+                <td>
+                    <a href="{% url 'core:section_detail' a.section.code %}">
+                        {{ a.section.code }}
+                    </a>
+                </td>
+                <td>
+                    <span class="badge {% if a.asset_type == 'TRACK' %}badge-track{% elif a.asset_type == 'OHE' %}badge-ohe{% else %}badge-signal{% endif %}">
+                        {{ a.get_asset_type_display }}
+                    </span>
+                </td>
+                <td>{{ a.health_score }} / 100</td>
+                <td>
+                    {% if a.health_score >= 80 %}
+                    <span class="badge badge-success">Good</span>
+                    {% elif a.health_score >= 60 %}
+                    <span class="badge badge-warning">Moderate</span>
+                    {% else %}
+                    <span class="badge badge-danger">Degraded</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 20px;">
+                    No assets match the selected filters.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

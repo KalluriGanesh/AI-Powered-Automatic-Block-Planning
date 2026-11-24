@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Plan Runs - Railway Block Planner{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h1 class="card-title">Maintenance Plan Runs</h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                History of generated maintenance schedules, baselines, and what-if simulation runs.
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'planner:generate_plan' %}" class="btn btn-primary btn-sm">+ Generate New Plan</a>
+            <a href="{% url 'planner:compare_plans' %}" class="btn btn-outline btn-sm">Compare Runs</a>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Label / Run Type</th>
+                <th>Created At</th>
+                <th>Scheduled</th>
+                <th>Deferred</th>
+                <th>Conflicts</th>
+                <th>Traffic Impact</th>
+                <th>Availability</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in runs %}
+            <tr>
+                <td><strong>#{{ r.pk }}</strong></td>
+                <td>
+                    {{ r.label }}
+                    {% if r.is_baseline %}
+                    <span class="badge badge-warning">Baseline (FCFS)</span>
+                    {% elif r.is_whatif %}
+                    <span class="badge badge-info">What-If</span>
+                    {% else %}
+                    <span class="badge badge-success">Optimized</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.85rem; color: var(--text-muted);">{{ r.created_at|date:"Y-m-d H:i" }}</td>
+                <td><strong>{{ r.scheduled_count }}</strong> / {{ r.total_requests }}</td>
+                <td>
+                    {% if r.deferred_count > 0 %}
+                    <span class="badge badge-danger">{{ r.deferred_count }}</span>
+                    {% else %}
+                    0
+                    {% endif %}
+                </td>
+                <td>
+                    {% if r.conflicts == 0 %}
+                    <span class="badge badge-success">0</span>
+                    {% else %}
+                    <span class="badge badge-danger">{{ r.conflicts }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ r.total_traffic_impact }}</td>
+                <td><strong>{{ r.availability_pct }}%</strong></td>
+                <td>
+                    <a href="{% url 'planner:run_detail' r.pk %}" class="btn btn-outline btn-sm">Details &rarr;</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" style="text-align: center; padding: 24px;">
+                    No plan runs found yet.
+                    <br><br>
+                    <a href="{% url 'planner:generate_plan' %}" class="btn btn-primary btn-sm">Generate Your First Plan</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

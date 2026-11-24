@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Plans - Railway Block Planner{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 16px;">
+    <a href="{% url 'planner:run_list' %}" class="btn btn-outline btn-sm">&larr; Back to Plan Runs</a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h1 class="card-title">Plan Comparison: Baseline vs. Optimized</h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                Evaluate performance improvements of deterministic cost-based scheduling over first-come-first-served (FCFS) baseline.
+            </p>
+        </div>
+    </div>
+
+    <form method="get" class="filter-bar" style="background: #f8fafc; padding: 16px; border-radius: 6px; border: 1px solid var(--border-color);">
+        <div>
+            <label for="baseline" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px;">Select Baseline Run:</label>
+            <select name="baseline" id="baseline" class="form-control">
+                {% for b in baselines %}
+                <option value="{{ b.pk }}" {% if baseline.pk == b.pk %}selected{% endif %}>
+                    #{{ b.pk }} - {{ b.label }} ({{ b.created_at|date:"M d H:i" }})
+                </option>
+                {% empty %}
+                <option value="">No baseline runs found</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="optimized" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px;">Select Optimized Run:</label>
+            <select name="optimized" id="optimized" class="form-control">
+                {% for o in optimized_runs %}
+                <option value="{{ o.pk }}" {% if optimized.pk == o.pk %}selected{% endif %}>
+                    #{{ o.pk }} - {{ o.label }} ({{ o.created_at|date:"M d H:i" }})
+                </option>
+                {% empty %}
+                <option value="">No optimized runs found</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="align-self: flex-end;">
+            <button type="submit" class="btn btn-primary btn-sm">Compare Selected Runs</button>
+        </div>
+    </form>
+
+    {% if comparison and baseline and optimized %}
+    <h2 style="font-size: 1.15rem; margin: 24px 0 12px 0;">KPI Performance Comparison</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Baseline (FCFS #{{ baseline.pk }})</th>
+                <th>Optimized (#{{ optimized.pk }})</th>
+                <th>Improvement / Variance</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Total Traffic Disruption Impact</strong></td>
+                <td>{{ baseline.total_traffic_impact }}</td>
+                <td><strong>{{ optimized.total_traffic_impact }}</strong></td>
+                <td>
+                    {% if comparison.traffic_reduction > 0 %}
+                    <span class="badge badge-success" style="font-size: 0.85rem;">
+                        -{{ comparison.traffic_reduction }} ({{ comparison.traffic_pct }}% reduction)
+                    </span>
+                    {% elif comparison.traffic_reduction == 0 %}
+                    <span class="badge badge-info">Parity</span>
+                    {% else %}
+                    <span class="badge badge-warning">+{{ comparison.traffic_reduction|slice:"1:" }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Scheduled Maintenance Requests</strong></td>
+                <td>{{ baseline.scheduled_count }} / {{ baseline.total_requests }}</td>
+                <td><strong>{{ optimized.scheduled_count }} / {{ optimized.total_requests }}</strong></td>
+                <td>
+                    {% if comparison.scheduled_diff > 0 %}
+                    <span class="badge badge-success">+{{ comparison.scheduled_diff }} more scheduled</span>
+                    {% elif comparison.scheduled_diff == 0 %}
+                    <span class="badge badge-info">Equal ({{ baseline.scheduled_count }})</span>
+                    {% else %}
+                    <span class="badge badge-warning">{{ comparison.scheduled_diff }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Deferred Requests</strong></td>
+                <td>{{ baseline.deferred_count }}</td>
+                <td><strong>{{ optimized.deferred_count }}</strong></td>
+                <td>
+                    {% if comparison.deferred_diff < 0 %}
+                    <span class="badge badge-success">{{ comparison.deferred_diff }} fewer deferred</span>
+                    {% elif comparison.deferred_diff == 0 %}
+                    <span class="badge badge-info">Equal</span>
+                    {% else %}
+                    <span class="badge badge-danger">+{{ comparison.deferred_diff }} deferred</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Scheduling Conflicts</strong></td>
+                <td>{{ baseline.conflicts }}</td>
+                <td><strong>{{ optimized.conflicts }}</strong></td>
+                <td><span class="badge badge-success">Zero Conflicts Guaranteed</span></td>
+            </tr>
+            <tr>
+                <td><strong>Corridor Network Availability</strong></td>
+                <td>{{ baseline.availability_pct }}%</td>
+                <td><strong>{{ optimized.availability_pct }}%</strong></td>
+                <td>
+                    {% if comparison.availability_diff >= 0 %}
+                    <span class="badge badge-success">+{{ comparison.availability_diff }}%</span>
+                    {% else %}
+                    <span class="badge badge-warning">{{ comparison.availability_diff }}%</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="margin-top: 24px; padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;">
+        <h3 style="font-size: 1rem; color: #166534; margin-bottom: 6px;">Summary Analysis</h3>
+        <p style="font-size: 0.9rem; color: #15803d; line-height: 1.5;">
+            The optimized schedule achieved a <strong>{{ comparison.traffic_pct }}% reduction</strong> in passenger/freight traffic disruption compared to the first-come-first-served baseline by scheduling high-duration maintenance blocks during low-density night hours (00:00–05:00) while strictly observing section availability and minimum 1-hour spacing buffers.
+        </p>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 32px; color: var(--text-muted);">
+        Please select both a baseline and an optimized run to view the performance comparison.
+        <br><br>
+        Run <code>python manage.py benchmark</code> to automatically generate benchmark runs.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

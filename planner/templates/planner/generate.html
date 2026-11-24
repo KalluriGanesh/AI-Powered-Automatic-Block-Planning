@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Maintenance Plan - Block Planner{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 16px;">
+    <a href="{% url 'planner:run_list' %}" class="btn btn-outline btn-sm">&larr; Back to Plan Runs</a>
+</div>
+
+<div class="card" style="max-width: 800px; margin: 0 auto 24px auto;">
+    <div class="card-header">
+        <h1 class="card-title">Generate Maintenance Plan</h1>
+        <span class="badge badge-success">Deterministic Engine</span>
+    </div>
+
+    <form method="post" action="{% url 'planner:generate_plan' %}">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 16px;">
+            <label for="label" style="display: block; font-weight: 600; margin-bottom: 6px;">Plan Label</label>
+            <input type="text" name="label" id="label" class="form-control" style="width: 100%;" value="Optimized Plan" required>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label for="horizon_days" style="display: block; font-weight: 600; margin-bottom: 6px;">Planning Horizon (Days)</label>
+            <input type="number" name="horizon_days" id="horizon_days" class="form-control" style="width: 100%;" min="1" max="14" value="7" required>
+            <small style="color: var(--text-muted);">Standard horizon is 7 days (Day 0 through Day 6).</small>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px;">
+                Simulate Blocked Sections (What-If Analysis)
+            </label>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
+                Select sections to mark as blocked for this run. What-if runs will not modify persistent request statuses.
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
+                {% for s in sections %}
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <input type="checkbox" name="blocked_sections" value="{{ s.id }}">
+                    <span><strong>{{ s.code }}</strong> ({{ s.name }})</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <a href="{% url 'planner:run_list' %}" class="btn btn-outline">Cancel</a>
+            <button type="submit" class="btn btn-primary">Run Deterministic Optimization Engine</button>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 12px;">Engine Constraint Specifications</h2>
+    <ul style="font-size: 0.85rem; color: #475569; line-height: 1.7; padding-left: 20px;">
+        <li><strong>Hard Constraints:</strong> Blocks cannot cross midnight (max end_hour 24), must complete on or before request deadline, cannot overlap on the same section and day, must maintain at least a 1-hour buffer gap, and cannot exceed 3 blocks per section per day.</li>
+        <li><strong>Priority & Cost Function:</strong> Requests evaluated by Priority (descending) & Deadline (ascending). Lowest candidate cost chosen using <code>Cost = W_TRAFFIC &times; traffic_sum + W_DAY &times; day</code> (W_TRAFFIC=1.0, W_DAY=0.5).</li>
+        <li><strong>Performance:</strong> Evaluated with O(1) prefix sums for traffic density lookups. Zero scheduling conflicts guaranteed.</li>
+    </ul>
+</div>
+{% endblock %}

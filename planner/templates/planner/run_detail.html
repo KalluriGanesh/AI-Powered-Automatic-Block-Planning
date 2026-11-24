@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Plan Run #{{ run.pk }} - Railway Block Planner{% endblock %}
+
+{% block extra_head %}
+<style>
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .metric-card {
+        background: #f8fafc;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 16px;
+        text-align: center;
+    }
+    .metric-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 4px 0;
+    }
+    .metric-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+    <a href="{% url 'planner:run_list' %}" class="btn btn-outline btn-sm">&larr; Back to Plan Runs</a>
+    <a href="{% url 'planner:compare_plans' %}?optimized={{ run.pk }}" class="btn btn-outline btn-sm">Compare with Baseline &rarr;</a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h1 class="card-title">{{ run.label }} (#{{ run.pk }})</h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                Generated on {{ run.created_at|date:"Y-m-d H:i:s" }} | Horizon: {{ run.horizon_days }} Days
+                {% if run.is_baseline %}
+                <span class="badge badge-warning">Baseline (FCFS)</span>
+                {% elif run.is_whatif %}
+                <span class="badge badge-info">What-If Simulation</span>
+                {% else %}
+                <span class="badge badge-success">Optimized</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-label">Scheduled Blocks</div>
+            <div class="metric-value" style="color: var(--success);">{{ run.scheduled_count }}</div>
+            <small style="color: var(--text-muted);">of {{ run.total_requests }} requests</small>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Deferred Requests</div>
+            <div class="metric-value" style="color: {% if run.deferred_count > 0 %}var(--danger){% else %}var(--text-muted){% endif %};">
+                {{ run.deferred_count }}
+            </div>
+            <small style="color: var(--text-muted);">unfeasible slots</small>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Conflicts</div>
+            <div class="metric-value" style="color: {% if run.conflicts == 0 %}var(--success){% else %}var(--danger){% endif %};">
+                {{ run.conflicts }}
+            </div>
+            <small style="color: var(--text-muted);">hard overlaps</small>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Total Traffic Impact</div>
+            <div class="metric-value" style="color: var(--primary);">{{ run.total_traffic_impact }}</div>
+            <small style="color: var(--text-muted);">aggregate density</small>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Section Availability</div>
+            <div class="metric-value" style="color: #0f172a;">{{ run.availability_pct }}%</div>
+            <small style="color: var(--text-muted);">network uptime</small>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Scheduled Maintenance Blocks ({{ blocks|length }})</h2>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Day</th>
+                <th>Time Window</th>
+                <th>Section</th>
+                <th>Asset</th>
+                <th>Duration</th>
+                <th>Traffic Cost</th>
+                <th>Score Breakdown</th>
+                <th>Explanation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in blocks %}
+            <tr>
+                <td><strong>Day {{ b.day }}</strong></td>
+                <td><code>{{ b.start_hour|stringformat:"02d" }}:00 – {{ b.end_hour|stringformat:"02d" }}:00</code></td>
+                <td><strong>{{ b.section.code }}</strong></td>
+                <td>
+                    {{ b.request.asset.name }}
+                    <span class="badge {% if b.request.asset.asset_type == 'TRACK' %}badge-track{% elif b.request.asset.asset_type == 'OHE' %}badge-ohe{% else %}badge-signal{% endif %}">
+                        {{ b.request.asset.asset_type }}
+                    </span>
+                </td>
+                <td>{{ b.request.duration_hours }}h</td>
+                <td>{{ b.cost }}</td>
+                <td style="font-size: 0.8rem;">
+                    Traffic: {{ b.score_breakdown.traffic }}<br>
+                    Day Penalty: {{ b.score_breakdown.day_penalty }}<br>
+                    Evaluated: {{ b.score_breakdown.slots_considered }} slots
+                </td>
+                <td style="font-size: 0.85rem; color: #475569; max-width: 320px;">
+                    {{ b.explanation|default:"Deterministic rule-based scheduling based on minimum traffic sum." }}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 20px;">
+                    No blocks were scheduled for this run.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if deferred_items %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title" style="color: var(--danger);">Deferred Requests ({{ deferred_items|length }})</h2>
+        <span class="badge badge-danger">Unscheduled</span>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Req ID</th>
+                <th>Asset</th>
+                <th>Section</th>
+                <th>Priority</th>
+                <th>Deadline</th>
+                <th>Reason for Deferral</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in deferred_items %}
+            <tr>
+                <td>#{{ d.request_id }}</td>
+                <td>{% if d.request %}{{ d.request.asset.name }}{% else %}&mdash;{% endif %}</td>
+                <td>{% if d.request %}<strong>{{ d.request.asset.section.code }}</strong>{% else %}&mdash;{% endif %}</td>
+                <td>{% if d.request %}P{{ d.request.priority }}{% else %}&mdash;{% endif %}</td>
+                <td>{% if d.request %}Day {{ d.request.deadline_day }}{% else %}&mdash;{% endif %}</td>
+                <td style="color: #b91c1c; font-weight: 500;">{{ d.reason }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}
