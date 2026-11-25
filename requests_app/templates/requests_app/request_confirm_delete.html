@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Request #{{ req.pk }} - Block Planner{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 16px;">
+    <a href="{% url 'requests_app:request_list' %}" class="btn btn-outline btn-sm">&larr; Back to Requests</a>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="card-header">
+        <h1 class="card-title" style="color: var(--danger);">Confirm Deletion</h1>
+        <span class="badge badge-danger">Irreversible</span>
+    </div>
+
+    <p style="margin-bottom: 20px; font-size: 0.95rem;">
+        Are you sure you want to permanently delete this maintenance request?
+    </p>
+
+    <div style="background: #f8fafc; padding: 16px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 24px;">
+        <table style="width: 100%; font-size: 0.9rem;">
+            <tr>
+                <td style="padding: 4px 8px; font-weight: 600; width: 120px;">Request ID</td>
+                <td>#{{ req.pk }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Asset</td>
+                <td>{{ req.asset.name }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Section</td>
+                <td>{{ req.asset.section.code }} ({{ req.asset.section.name }})</td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Priority</td>
+                <td>P{{ req.priority }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Duration</td>
+                <td>{{ req.duration_hours }} hours</td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Deadline</td>
+                <td>Day {{ req.deadline_day }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Status</td>
+                <td>{{ req.get_status_display }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Description</td>
+                <td>{{ req.description|default:"—" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <a href="{% url 'requests_app:request_list' %}" class="btn btn-outline">Cancel</a>
+            <button type="submit" class="btn btn-primary" style="background: var(--danger); border-color: var(--danger);">
+                Delete Request
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

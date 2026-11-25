@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}What-If Analysis - Block Planner{% endblock %}
+
+{% block extra_head %}
+<style>
+    .whatif-form {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        margin-bottom: 24px;
+    }
+    .section-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+        margin: 12px 0 20px 0;
+    }
+    .section-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 2px solid var(--border-color);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+    }
+    .section-option:hover {
+        border-color: var(--primary);
+        background: #eff6ff;
+    }
+    .section-option input[type="radio"] {
+        accent-color: var(--primary);
+    }
+    .impact-summary {
+        padding: 16px;
+        border-radius: 6px;
+        margin-top: 20px;
+    }
+    .impact-good {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+    }
+    .impact-warn {
+        background: #fef3c7;
+        border: 1px solid #fde68a;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 16px;">
+    <a href="{% url 'dashboard:home' %}" class="btn btn-outline btn-sm">&larr; Back to Dashboard</a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h1 class="card-title">🔮 What-If Analysis</h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                Simulate the impact of blocking a section on the maintenance schedule.
+                What-if runs do <strong>not</strong> modify persistent request statuses or section flags.
+            </p>
+        </div>
+    </div>
+
+    <form method="post" class="whatif-form">
+        {% csrf_token %}
+        <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 1rem;">
+            Select a Section to Block:
+        </label>
+        <div class="section-selector">
+            {% for sec in sections %}
+            <label class="section-option">
+                <input type="radio" name="section_id" value="{{ sec.id }}"
+                       {% if selected_section and selected_section.id == sec.id %}checked{% endif %}>
+                <div>
+                    <strong>{{ sec.code }}</strong>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">{{ sec.name }} ({{ sec.length_km }} km)</div>
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Run What-If Simulation</button>
+    </form>
+</div>
+
+{% if whatif_run %}
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">{{ whatif_run.label }} (#{{ whatif_run.pk }})</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">
+                <span class="badge badge-info">What-If Simulation</span>
+                {{ whatif_run.created_at|date:"Y-m-d H:i:s" }} |
+                {{ whatif_run.scheduled_count }} scheduled, {{ whatif_run.deferred_count }} deferred
+            </p>
+        </div>
+        <a href="{% url 'planner:run_detail' whatif_run.pk %}" class="btn btn-outline btn-sm">Full Details →</a>
+    </div>
+
+    <!-- Impact Summary -->
+    <div class="impact-summary {% if whatif_run.deferred_count > 0 %}impact-warn{% else %}impact-good{% endif %}">
+        <h3 style="font-size: 1rem; margin-bottom: 8px;">
+            {% if whatif_run.deferred_count > 0 %}
+            ⚠️ Impact Assessment: {{ whatif_run.deferred_count }} Requests Deferred
+            {% else %}
+            ✅ Minimal Impact: All requests scheduled despite section blockage.
+            {% endif %}
+        </h3>
+        <p style="font-size: 0.9rem; line-height: 1.5;">
+            Blocking <strong>{{ selected_section.code }}</strong> ({{ selected_section.name }}) results in
+            {{ whatif_run.scheduled_count }} of {{ whatif_run.total_requests }} requests being scheduled
+            with a total traffic impact of {{ whatif_run.total_traffic_impact }}.
+            Network availability: <strong>{{ whatif_run.availability_pct }}%</strong>.
+        </p>
+    </div>
+
+    {% if whatif_blocks %}
+    <h3 style="font-size: 1.05rem; margin: 20px 0 10px 0;">Scheduled Blocks ({{ whatif_blocks|length }})</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Day</th>
+                <th>Time Window</th>
+                <th>Section</th>
+                <th>Asset</th>
+                <th>Duration</th>
+                <th>Traffic Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in whatif_blocks %}
+            <tr>
+                <td><strong>Day {{ b.day }}</strong></td>
+                <td><code>{{ b.start_hour|stringformat:"02d" }}:00 – {{ b.end_hour|stringformat:"02d" }}:00</code></td>
+                <td><strong>{{ b.section.code }}</strong></td>
+                <td>{{ b.request.asset.name }}</td>
+                <td>{{ b.request.duration_hours }}h</td>
+                <td>{{ b.cost }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if deferred_items %}
+    <h3 style="font-size: 1.05rem; margin: 20px 0 10px 0; color: var(--danger);">
+        Deferred Requests ({{ deferred_items|length }})
+    </h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Req ID</th>
+                <th>Asset</th>
+                <th>Section</th>
+                <th>Priority</th>
+                <th>Reason for Deferral</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in deferred_items %}
+            <tr>
+                <td>#{{ d.request_id }}</td>
+                <td>{% if d.request %}{{ d.request.asset.name }}{% else %}&mdash;{% endif %}</td>
+                <td>{% if d.request %}<strong>{{ d.request.asset.section.code }}</strong>{% else %}&mdash;{% endif %}</td>
+                <td>{% if d.request %}P{{ d.request.priority }}{% else %}&mdash;{% endif %}</td>
+                <td style="color: #b91c1c; font-weight: 500;">{{ d.reason }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if whatif_runs %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Recent What-If Simulations</h2>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Label</th>
+                <th>Created</th>
+                <th>Scheduled</th>
+                <th>Deferred</th>
+                <th>Traffic Impact</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in whatif_runs %}
+            <tr>
+                <td><strong>#{{ r.pk }}</strong></td>
+                <td>{{ r.label }} <span class="badge badge-info">What-If</span></td>
+                <td style="font-size: 0.85rem; color: var(--text-muted);">{{ r.created_at|date:"M d H:i" }}</td>
+                <td>{{ r.scheduled_count }} / {{ r.total_requests }}</td>
+                <td>
+                    {% if r.deferred_count > 0 %}
+                    <span class="badge badge-danger">{{ r.deferred_count }}</span>
+                    {% else %}0{% endif %}
+                </td>
+                <td>{{ r.total_traffic_impact }}</td>
+                <td>
+                    <a href="{% url 'planner:run_detail' r.pk %}" class="btn btn-outline btn-sm">Details →</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

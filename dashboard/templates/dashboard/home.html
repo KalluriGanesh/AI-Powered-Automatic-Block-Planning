@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Railway Block Planner{% endblock %}
+
+{% block extra_head %}
+<style>
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .kpi-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 4px 0;
+    }
+    .kpi-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+    .kpi-sub {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+
+    /* Timeline Grid Styles */
+    .timeline-wrapper {
+        overflow-x: auto;
+        margin: 20px 0;
+    }
+    .timeline-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.7rem;
+        text-align: center;
+    }
+    .timeline-table th,
+    .timeline-table td {
+        padding: 4px 2px;
+        border: 1px solid #e2e8f0;
+        min-width: 36px;
+        height: 32px;
+        position: relative;
+    }
+    .timeline-table th {
+        background: #f1f5f9;
+        font-weight: 600;
+        color: #475569;
+        position: sticky;
+        top: 0;
+    }
+    .timeline-table .day-header {
+        background: #f8fafc;
+        font-weight: 700;
+        min-width: 60px;
+        position: sticky;
+        left: 0;
+        z-index: 1;
+    }
+    .block-cell {
+        border-radius: 3px;
+        color: white;
+        font-weight: 600;
+        font-size: 0.65rem;
+        padding: 2px 3px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: default;
+    }
+    .block-cell:hover {
+        opacity: 0.85;
+        box-shadow: 0 0 4px rgba(0,0,0,0.3);
+    }
+
+    .section-legend {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin: 12px 0;
+        font-size: 0.85rem;
+    }
+    .section-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .legend-swatch {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--text-muted);
+    }
+    .empty-state h2 {
+        font-size: 1.3rem;
+        color: #475569;
+        margin-bottom: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- KPI Cards -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-label">Total Requests</div>
+        <div class="kpi-value" style="color: var(--primary);">{{ total_requests }}</div>
+        <div class="kpi-sub">maintenance work items</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">Pending</div>
+        <div class="kpi-value" style="color: #f59e0b;">{{ pending_count }}</div>
+        <div class="kpi-sub">awaiting scheduling</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">Scheduled</div>
+        <div class="kpi-value" style="color: var(--success);">{{ scheduled_count }}</div>
+        <div class="kpi-sub">blocks assigned</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">Deferred</div>
+        <div class="kpi-value" style="color: {% if deferred_count > 0 %}var(--danger){% else %}var(--text-muted){% endif %};">{{ deferred_count }}</div>
+        <div class="kpi-sub">infeasible / blocked</div>
+    </div>
+    {% if latest_plan %}
+    <div class="kpi-card">
+        <div class="kpi-label">Traffic Impact</div>
+        <div class="kpi-value" style="color: #0f172a;">{{ latest_plan.total_traffic_impact }}</div>
+        <div class="kpi-sub">aggregate density (latest plan)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">Availability</div>
+        <div class="kpi-value" style="color: var(--primary);">{{ latest_plan.availability_pct }}%</div>
+        <div class="kpi-sub">network uptime</div>
+    </div>
+    {% endif %}
+</div>
+
+{% if latest_plan and timeline_grid %}
+<!-- Latest Plan Info -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">📅 Schedule Timeline — {{ latest_plan.label }} (#{{ latest_plan.pk }})</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">
+                Generated {{ latest_plan.created_at|date:"Y-m-d H:i" }} |
+                {{ latest_plan.scheduled_count }} blocks scheduled across {{ latest_plan.horizon_days }} days |
+                <span class="badge badge-success" style="font-size: 0.75rem;">0 Conflicts</span>
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'planner:run_detail' latest_plan.pk %}" class="btn btn-outline btn-sm">View Full Details →</a>
+            <a href="{% url 'dashboard:whatif' %}" class="btn btn-outline btn-sm">What-If Analysis</a>
+        </div>
+    </div>
+
+    <!-- Section Color Legend -->
+    <div class="section-legend">
+        {% for item in section_legend %}
+        <div class="section-legend-item">
+            <span class="legend-swatch" style="background: {{ item.color }};"></span>
+            <strong>{{ item.section.code }}</strong>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 7×24 Timeline Grid -->
+    <div class="timeline-wrapper">
+        <table class="timeline-table">
+            <thead>
+                <tr>
+                    <th class="day-header">Day</th>
+                    {% for h in "012345678901234567890123" %}
+                    <th>{{ forloop.counter0 }}h</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for day_row in timeline_grid %}
+                <tr>
+                    <th class="day-header">Day {{ day_row.day }}</th>
+                    {% for cell in day_row.hours %}
+                    <td style="{% if cell.blocks %}padding: 2px;{% endif %}">
+                        {% for b in cell.blocks %}
+                        {% if b.is_start %}
+                        <div class="block-cell"
+                             style="background: {{ b.section_color }}; cursor: pointer;"
+                             onclick="explainBlock({{ b.block_id }})"
+                             title="Click for AI explanation | {{ b.section_code }} | {{ b.asset_name }} | {{ b.duration }}h | Cost: {{ b.cost }}">
+                            {{ b.section_code }}
+                        </div>
+                        {% elif cell.blocks %}
+                        <div class="block-cell"
+                             style="background: {{ b.section_color }}; opacity: 0.75; cursor: pointer;"
+                             onclick="explainBlock({{ b.block_id }})"
+                             title="Click for AI explanation | {{ b.section_code }} | {{ b.asset_name }} (continued)">
+                            ·
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Interactive AI Block Explanation Panel -->
+    <div id="ai-explain-panel" style="display: none; margin-top: 16px; padding: 16px; background: #f8fafc; border: 1px solid var(--border-color); border-left: 4px solid var(--primary); border-radius: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <strong id="ai-explain-title" style="color: #0f172a;">Block Explanation</strong>
+            <div>
+                <span id="ai-explain-source" class="badge badge-info"></span>
+                <button type="button" class="btn btn-outline btn-sm" style="margin-left: 8px;" onclick="document.getElementById('ai-explain-panel').style.display='none';">Close</button>
+            </div>
+        </div>
+        <p id="ai-explain-body" style="font-size: 0.9rem; color: #334155; margin: 0;"></p>
+    </div>
+</div>
+
+<script>
+function explainBlock(blockId) {
+    const panel = document.getElementById('ai-explain-panel');
+    const title = document.getElementById('ai-explain-title');
+    const source = document.getElementById('ai-explain-source');
+    const body = document.getElementById('ai-explain-body');
+
+    panel.style.display = 'block';
+    title.textContent = 'Loading explanation for Block #' + blockId + '...';
+    source.textContent = '...';
+    body.textContent = '';
+
+    fetch('/ai/explain/' + blockId + '/')
+        .then(function(resp) {
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            return resp.json();
+        })
+        .then(function(data) {
+            title.textContent = data.section + ' — ' + data.asset + ' (' + data.window + ')';
+            source.textContent = data.source;
+            body.textContent = data.explanation;
+        })
+        .catch(function(err) {
+            title.textContent = 'Unable to load explanation';
+            source.textContent = 'error';
+            body.textContent = err.message;
+        });
+}
+</script>
+
+<!-- Section Overview -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Section Overview</h2>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Section</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Assets</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sec in sections %}
+            <tr>
+                <td><strong>{{ sec.code }}</strong></td>
+                <td>{{ sec.name }}</td>
+                <td>
+                    {% if sec.is_blocked %}
+                    <span class="badge badge-danger">BLOCKED</span>
+                    {% else %}
+                    <span class="badge badge-success">OPERATIONAL</span>
+                    {% endif %}
+                </td>
+                <td>{{ sec.assets.count }} assets</td>
+                <td>
+                    <a href="{% url 'core:section_detail' sec.code %}" class="btn btn-outline btn-sm">View →</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="card">
+    <div class="empty-state">
+        <h2>🚆 No Scheduled Plan Yet</h2>
+        <p>Generate your first optimized maintenance plan to see the schedule timeline, KPIs, and traffic analysis.</p>
+        <div style="margin-top: 20px;">
+            <a href="{% url 'planner:generate_plan' %}" class="btn btn-primary">Generate Optimized Plan</a>
+            <a href="{% url 'requests_app:request_list' %}" class="btn btn-outline" style="margin-left: 12px;">Manage Requests</a>
+        </div>
+        <p style="margin-top: 20px; font-size: 0.85rem;">
+            Quick start: <code>python manage.py seed_data</code> then
+            <code>python manage.py seed_requests</code> then
+            <a href="{% url 'planner:generate_plan' %}">generate a plan</a>.
+        </p>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

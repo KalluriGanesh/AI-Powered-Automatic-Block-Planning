@@ -1,7 +1,9 @@
 from django.urls import path
+from . import views
 
 app_name = 'dashboard'
 
 urlpatterns = [
-    # Dashboard routes owned by Prasanth
+    path('', views.dashboard_home, name='home'),
+    path('whatif/', views.whatif_view, name='whatif'),
 ]

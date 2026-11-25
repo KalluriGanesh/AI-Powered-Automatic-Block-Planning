@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Requests - Block Planner{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h1 class="card-title">Maintenance Requests</h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                All submitted maintenance requests with status, priority, and scheduling details.
+            </p>
+        </div>
+        <a href="{% url 'requests_app:request_create' %}" class="btn btn-primary btn-sm">+ New Request</a>
+    </div>
+
+    <form method="get" class="filter-bar">
+        <div>
+            <label for="status" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px;">Status:</label>
+            <select name="status" id="status" class="form-control">
+                <option value="">-- All --</option>
+                {% for code, label in status_choices %}
+                <option value="{{ code }}" {% if selected_status == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="priority" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px;">Priority:</label>
+            <select name="priority" id="priority" class="form-control">
+                <option value="">-- All --</option>
+                {% for p in "12345" %}
+                <option value="{{ p }}" {% if selected_priority == p %}selected{% endif %}>P{{ p }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="align-self: flex-end;">
+            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+            <a href="{% url 'requests_app:request_list' %}" class="btn btn-outline btn-sm">Reset</a>
+        </div>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Asset</th>
+                <th>Section</th>
+                <th>Priority</th>
+                <th>Duration</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th>Source</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in requests %}
+            <tr>
+                <td><strong>#{{ r.pk }}</strong></td>
+                <td>{{ r.asset.name }}</td>
+                <td>
+                    <a href="{% url 'core:section_detail' r.asset.section.code %}">
+                        <strong>{{ r.asset.section.code }}</strong>
+                    </a>
+                </td>
+                <td>
+                    <span class="badge {% if r.priority >= 4 %}badge-danger{% elif r.priority >= 3 %}badge-warning{% else %}badge-info{% endif %}">
+                        P{{ r.priority }}
+                    </span>
+                </td>
+                <td>{{ r.duration_hours }}h</td>
+                <td>Day {{ r.deadline_day }}</td>
+                <td>
+                    {% if r.status == 'PENDING' %}
+                    <span class="badge badge-warning">Pending</span>
+                    {% elif r.status == 'SCHEDULED' %}
+                    <span class="badge badge-success">Scheduled</span>
+                    {% else %}
+                    <span class="badge badge-danger">Deferred</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.85rem; color: var(--text-muted);">{{ r.get_source_display }}</td>
+                <td style="font-size: 0.85rem; color: var(--text-muted);">{{ r.created_at|date:"M d H:i" }}</td>
+                <td>
+                    <a href="{% url 'requests_app:request_edit' r.pk %}" class="btn btn-outline btn-sm">Edit</a>
+                    <a href="{% url 'requests_app:request_delete' r.pk %}" class="btn btn-outline btn-sm" style="color: var(--danger);">Del</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" style="text-align: center; padding: 24px;">
+                    No maintenance requests found.
+                    <br><br>
+                    <a href="{% url 'requests_app:request_create' %}" class="btn btn-primary btn-sm">Create Your First Request</a>
+                    <span style="margin: 0 8px; color: var(--text-muted);">or</span>
+                    Run <code>python manage.py seed_requests</code> to generate sample data.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

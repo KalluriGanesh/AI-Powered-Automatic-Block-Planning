@@ -1,7 +1,11 @@
 from django.urls import path
+from . import views
 
 app_name = 'requests_app'
 
 urlpatterns = [
-    # Request routes owned by Prasanth
+    path('', views.request_list, name='request_list'),
+    path('create/', views.request_create, name='request_create'),
+    path('<int:pk>/edit/', views.request_edit, name='request_edit'),
+    path('<int:pk>/delete/', views.request_delete, name='request_delete'),
 ]
