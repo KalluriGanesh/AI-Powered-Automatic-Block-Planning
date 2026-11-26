@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Railway Block Planner{% endblock %}
+
+{% block extra_head %}
+<style>
+    .auth-container {
+        max-width: 440px;
+        margin: 40px auto;
+    }
+    .auth-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 32px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .auth-header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+    .auth-icon {
+        font-size: 2.5rem;
+        margin-bottom: 8px;
+        display: inline-block;
+    }
+    .auth-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 6px;
+    }
+    .auth-subtitle {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+    .form-group {
+        margin-bottom: 18px;
+    }
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #334155;
+    }
+    .auth-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+    .auth-footer {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+    .auth-footer a {
+        color: var(--primary);
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+    .auth-notice {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 0.8rem;
+        color: #0369a1;
+        margin-bottom: 18px;
+        line-height: 1.4;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">🚆</div>
+            <h1 class="auth-title">Sign In</h1>
+            <p class="auth-subtitle">Railway Maintenance Planning & Scheduling System</p>
+        </div>
+
+        <div class="auth-notice">
+            <strong>Notice:</strong> If you do not have an existing account, entering your username will automatically redirect you to the <strong>Sign Up</strong> page.
+        </div>
+
+        <form method="post" action="{% url 'core:login' %}">
+            {% csrf_token %}
+            {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+
+            <div class="form-group">
+                <label for="username">Username or Email</label>
+                <input
+                    type="text"
+                    name="username"
+                    id="username"
+                    class="form-control"
+                    style="width: 100%;"
+                    value="{{ username|default:'' }}"
+                    placeholder="Enter username or email"
+                    required
+                    autofocus
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input
+                    type="password"
+                    name="password"
+                    id="password"
+                    class="form-control"
+                    style="width: 100%;"
+                    placeholder="Enter your password"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary auth-btn">
+                Sign In &rarr;
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Don't have an account?
+            <a href="{% url 'core:signup' %}">Create New Account</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

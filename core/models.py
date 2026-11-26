@@ -1,4 +1,37 @@
 from django.db import models
+from django.contrib.auth.models import User
+
+
+class UserAccount(models.Model):
+    """
+    Model storing credentials, role, and profile details for authenticated railway users.
+    """
+    ROLE_CHOICES = [
+        ('PLANNER', 'Maintenance Planner'),
+        ('SECTION_ENGINEER', 'Section Engineer'),
+        ('CHIEF_CONTROLLER', 'Chief Traffic Controller'),
+        ('ADMIN', 'System Administrator'),
+    ]
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='account'
+    )
+    employee_id = models.CharField(max_length=30, unique=True, blank=True, null=True)
+    role = models.CharField(max_length=50, choices=ROLE_CHOICES, default='PLANNER')
+    department = models.CharField(max_length=100, default='Civil / Track Engineering')
+    phone_number = models.CharField(max_length=20, blank=True)
+    is_approved = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_login_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} ({self.get_role_display()}) - {self.employee_id or 'No ID'}"
+
 
 
 class Section(models.Model):

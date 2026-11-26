@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Railway Block Planner{% endblock %}
+
+{% block extra_head %}
+<style>
+    .auth-container {
+        max-width: 580px;
+        margin: 30px auto;
+    }
+    .auth-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 32px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .auth-header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+    .auth-icon {
+        font-size: 2.5rem;
+        margin-bottom: 8px;
+        display: inline-block;
+    }
+    .auth-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 6px;
+    }
+    .auth-subtitle {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .form-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #334155;
+    }
+    .auth-btn {
+        width: 100%;
+        padding: 11px;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+    .auth-footer {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+    .auth-footer a {
+        color: var(--primary);
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">📝</div>
+            <h1 class="auth-title">Create Planner Account</h1>
+            <p class="auth-subtitle">Register your credentials for railway maintenance & block planning</p>
+        </div>
+
+        <form method="post" action="{% url 'core:signup' %}">
+            {% csrf_token %}
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="username">Username <span style="color: var(--danger);">*</span></label>
+                    <input
+                        type="text"
+                        name="username"
+                        id="username"
+                        class="form-control"
+                        value="{{ form_data.username|default:'' }}"
+                        placeholder="e.g. ganesh_planner"
+                        required
+                        autofocus
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input
+                        type="email"
+                        name="email"
+                        id="email"
+                        class="form-control"
+                        value="{{ form_data.email|default:'' }}"
+                        placeholder="e.g. user@railways.gov.in"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password <span style="color: var(--danger);">*</span></label>
+                    <input
+                        type="password"
+                        name="password"
+                        id="password"
+                        class="form-control"
+                        placeholder="Minimum 6 characters"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password <span style="color: var(--danger);">*</span></label>
+                    <input
+                        type="password"
+                        name="confirm_password"
+                        id="confirm_password"
+                        class="form-control"
+                        placeholder="Re-enter password"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="first_name">First Name</label>
+                    <input
+                        type="text"
+                        name="first_name"
+                        id="first_name"
+                        class="form-control"
+                        value="{{ form_data.first_name|default:'' }}"
+                        placeholder="First name"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="last_name">Last Name</label>
+                    <input
+                        type="text"
+                        name="last_name"
+                        id="last_name"
+                        class="form-control"
+                        value="{{ form_data.last_name|default:'' }}"
+                        placeholder="Last name"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="employee_id">Employee / Staff ID</label>
+                    <input
+                        type="text"
+                        name="employee_id"
+                        id="employee_id"
+                        class="form-control"
+                        value="{{ form_data.employee_id|default:'' }}"
+                        placeholder="e.g. EMP-2026-99"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="phone_number">Phone Number</label>
+                    <input
+                        type="text"
+                        name="phone_number"
+                        id="phone_number"
+                        class="form-control"
+                        value="{{ form_data.phone_number|default:'' }}"
+                        placeholder="e.g. +91 98765 43210"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <input
+                        type="text"
+                        name="department"
+                        id="department"
+                        class="form-control"
+                        value="{{ form_data.department|default:'Civil / Track Engineering' }}"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select name="role" id="role" class="form-control">
+                        {% for code, label in role_choices %}
+                        <option value="{{ code }}" {% if form_data.role == code %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary auth-btn">
+                Create Account & Sign In
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account?
+            <a href="{% url 'core:login' %}">Sign In</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

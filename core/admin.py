@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Section, Asset, TrafficSlot
+from .models import Section, Asset, TrafficSlot, UserAccount
 
 
 @admin.register(Section)
@@ -26,3 +26,20 @@ class TrafficSlotAdmin(admin.ModelAdmin):
     list_display = ('section', 'day', 'hour', 'density')
     list_filter = ('day', 'section', 'density')
     search_fields = ('section__code',)
+
+
+@admin.register(UserAccount)
+class UserAccountAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'employee_id',
+        'role',
+        'department',
+        'phone_number',
+        'is_approved',
+        'created_at',
+        'last_login_at',
+    )
+    list_filter = ('role', 'is_approved', 'department')
+    search_fields = ('user__username', 'user__email', 'employee_id', 'department')
+    readonly_fields = ('created_at', 'last_login_at')
