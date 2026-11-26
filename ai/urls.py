@@ -5,4 +5,5 @@ app_name = 'ai'
 
 urlpatterns = [
     path('explain/<int:block_id>/', views.explain_view, name='explain_block'),
+    path('chat/', views.chat_view, name='chat'),
 ]

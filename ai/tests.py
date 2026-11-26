@@ -1,3 +1,4 @@
+import json
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.core.management import call_command
@@ -73,3 +74,42 @@ class ExplainViewTests(TestCase):
         url = reverse('ai:explain_block', kwargs={'block_id': 99999})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+
+
+class ChatViewTests(TestCase):
+    def setUp(self):
+        call_command('seed_data')
+        self.client = Client()
+
+    def test_chat_endpoint_returns_answer(self):
+        url = reverse('ai:chat')
+        response = self.client.post(
+            url,
+            data=json.dumps({'message': 'What are the hard constraints?'}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('reply', data)
+        self.assertIn('Midnight', data['reply'])
+
+    def test_chat_endpoint_traffic_question(self):
+        url = reverse('ai:chat')
+        response = self.client.post(
+            url,
+            data=json.dumps({'message': 'How is traffic density calculated?'}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('traffic', data['reply'].lower())
+
+    def test_chat_endpoint_empty_message_returns_400(self):
+        url = reverse('ai:chat')
+        response = self.client.post(
+            url,
+            data=json.dumps({'message': ''}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 400)
+
