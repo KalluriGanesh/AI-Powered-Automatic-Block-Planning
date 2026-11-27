@@ -5,10 +5,10 @@
 {% block extra_head %}
 <style>
     .whatif-form {
-        background: #f8fafc;
+        background: var(--surface-muted);
         padding: 20px;
         border-radius: 8px;
-        border: 1px solid var(--border-color);
+        border: 1px solid var(--border);
         margin-bottom: 24px;
     }
     .section-selector {
@@ -22,18 +22,19 @@
         align-items: center;
         gap: 8px;
         padding: 10px 12px;
-        border: 2px solid var(--border-color);
+        border: 2px solid var(--border);
         border-radius: 6px;
         cursor: pointer;
-        transition: all 0.2s;
-        background: white;
+        transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+        background: var(--surface);
+        color: var(--text);
     }
     .section-option:hover {
-        border-color: var(--primary);
-        background: #eff6ff;
+        border-color: var(--accent);
+        background: var(--surface-muted);
     }
     .section-option input[type="radio"] {
-        accent-color: var(--primary);
+        accent-color: var(--accent);
     }
     .impact-summary {
         padding: 16px;
@@ -41,12 +42,14 @@
         margin-top: 20px;
     }
     .impact-good {
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
+        background: var(--status-completed-bg);
+        border: 1px solid var(--status-completed-border);
+        color: var(--status-completed-text);
     }
     .impact-warn {
-        background: #fef3c7;
-        border: 1px solid #fde68a;
+        background: var(--status-delayed-bg);
+        border: 1px solid var(--status-delayed-border);
+        color: var(--status-delayed-text);
     }
 </style>
 {% endblock %}
@@ -168,7 +171,7 @@
                 <td>{% if d.request %}{{ d.request.asset.name }}{% else %}&mdash;{% endif %}</td>
                 <td>{% if d.request %}<strong>{{ d.request.asset.section.code }}</strong>{% else %}&mdash;{% endif %}</td>
                 <td>{% if d.request %}P{{ d.request.priority }}{% else %}&mdash;{% endif %}</td>
-                <td style="color: #b91c1c; font-weight: 500;">{{ d.reason }}</td>
+                <td style="color: var(--danger); font-weight: 500;">{{ d.reason }}</td>
             </tr>
             {% endfor %}
         </tbody>

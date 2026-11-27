@@ -17,7 +17,7 @@
         </div>
     </div>
 
-    <form method="get" class="filter-bar" style="background: #0c1424; padding: 16px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.15);">
+    <form method="get" class="filter-bar" style="background: var(--surface-muted); padding: 16px; border-radius: 8px; border: 1px solid var(--border);">
         <div>
             <label for="baseline" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px;">Select Baseline Run:</label>
             <select name="baseline" id="baseline" class="form-control">
@@ -127,9 +127,9 @@
         </tbody>
     </table>
 
-    <div style="margin-top: 24px; padding: 18px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px;">
-        <h3 style="font-size: 1rem; color: #4ade80; margin-bottom: 6px;">Summary Analysis</h3>
-        <p style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.6;">
+    <div class="status-completed" style="margin-top: 24px; padding: 18px; border-radius: 8px; border-top: 1px solid var(--status-completed-border); border-right: 1px solid var(--status-completed-border); border-bottom: 1px solid var(--status-completed-border);">
+        <h3 style="font-size: 1rem; color: var(--status-completed-text); margin-bottom: 6px;">Summary Analysis</h3>
+        <p style="font-size: 0.9rem; color: var(--status-completed-text); line-height: 1.6;">
             The optimized schedule achieved a <strong>{{ comparison.traffic_pct }}% reduction</strong> in passenger/freight traffic disruption compared to the first-come-first-served baseline by scheduling high-duration maintenance blocks during low-density night hours (00:00–05:00) while strictly observing section availability and minimum 1-hour spacing buffers.
         </p>
     </div>

@@ -16,26 +16,26 @@
     }
     .heat-table th, .heat-table td {
         padding: 6px 4px;
-        border: 1px solid rgba(148, 163, 184, 0.12);
+        border: 1px solid var(--border);
         min-width: 32px;
     }
     .heat-cell-low {
-        background-color: rgba(16, 185, 129, 0.2);
-        color: #34d399;
+        background-color: var(--status-completed-bg);
+        color: var(--status-completed-text);
         font-weight: 700;
-        border: 1px solid rgba(16, 185, 129, 0.35);
+        border: 1px solid var(--status-completed-border);
     }
     .heat-cell-med {
-        background-color: rgba(2, 132, 199, 0.2);
-        color: #38bdf8;
+        background-color: var(--status-inprogress-bg);
+        color: var(--status-inprogress-text);
         font-weight: 700;
-        border: 1px solid rgba(2, 132, 199, 0.35);
+        border: 1px solid var(--status-inprogress-border);
     }
     .heat-cell-high {
-        background-color: rgba(244, 63, 94, 0.22);
-        color: #fb7185;
+        background-color: var(--status-conflict-bg);
+        color: var(--status-conflict-text);
         font-weight: 700;
-        border: 1px solid rgba(244, 63, 94, 0.4);
+        border: 1px solid var(--status-conflict-border);
     }
     .legend {
         display: flex;
@@ -90,16 +90,16 @@
         <table class="heat-table">
             <thead>
                 <tr>
-                    <th style="background: #16223b; color: #94a3b8; min-width: 60px;">Day</th>
+                    <th style="background: var(--surface-muted); color: var(--text-muted); min-width: 60px;">Day</th>
                     {% for h in hours %}
-                    <th style="background: #16223b; color: #94a3b8;">{{ h }}h</th>
+                    <th style="background: var(--surface-muted); color: var(--text-muted);">{{ h }}h</th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody>
                 {% for row in grid_rows %}
                 <tr>
-                    <th style="background: #111a2e; color: #38bdf8; font-weight: 700; border-right: 2px solid rgba(6, 182, 212, 0.35);">Day {{ row.day }}</th>
+                    <th style="background: var(--surface-muted); color: var(--accent); font-weight: 700; border-right: 2px solid var(--border);">Day {{ row.day }}</th>
                     {% for density in row.hours %}
                     <td class="{% if density <= 3 %}heat-cell-low{% elif density <= 6 %}heat-cell-med{% else %}heat-cell-high{% endif %}">
                         {{ density }}

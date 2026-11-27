@@ -11,17 +11,17 @@
         margin-bottom: 24px;
     }
     .metric-card {
-        background: #111a2e;
-        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: var(--surface);
+        border: 1px solid var(--border);
         border-radius: 8px;
         padding: 16px;
         text-align: center;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+        box-shadow: var(--shadow);
     }
     .metric-value {
         font-size: 1.8rem;
         font-weight: 700;
-        color: #f8fafc;
+        color: var(--text);
         margin: 4px 0;
     }
     .metric-label {
@@ -84,7 +84,7 @@
         </div>
         <div class="metric-card">
             <div class="metric-label">Section Availability</div>
-            <div class="metric-value" style="color: #0f172a;">{{ run.availability_pct }}%</div>
+            <div class="metric-value" style="color: var(--text);">{{ run.availability_pct }}%</div>
             <small style="color: var(--text-muted);">network uptime</small>
         </div>
     </div>
@@ -127,7 +127,7 @@
                     Day Penalty: {{ b.score_breakdown.day_penalty }}<br>
                     Evaluated: {{ b.score_breakdown.slots_considered }} slots
                 </td>
-                <td style="font-size: 0.85rem; color: #475569; max-width: 320px;">
+                <td style="font-size: 0.85rem; color: var(--text-muted); max-width: 320px;">
                     {{ b.explanation|default:"Deterministic rule-based scheduling based on minimum traffic sum." }}
                 </td>
             </tr>
@@ -168,7 +168,7 @@
                 <td>{% if d.request %}<strong>{{ d.request.asset.section.code }}</strong>{% else %}&mdash;{% endif %}</td>
                 <td>{% if d.request %}P{{ d.request.priority }}{% else %}&mdash;{% endif %}</td>
                 <td>{% if d.request %}Day {{ d.request.deadline_day }}{% else %}&mdash;{% endif %}</td>
-                <td style="color: #b91c1c; font-weight: 500;">{{ d.reason }}</td>
+                <td style="color: var(--danger); font-weight: 500;">{{ d.reason }}</td>
             </tr>
             {% endfor %}
         </tbody>

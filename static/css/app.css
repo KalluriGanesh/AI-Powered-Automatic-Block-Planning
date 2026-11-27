@@ -17,17 +17,19 @@
 /* ===== Form Styles ===== */
 .form-control {
     padding: 8px 12px;
-    border: 1px solid var(--border-color);
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     font-size: 0.9rem;
     width: 100%;
-    transition: border-color 0.2s;
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
 }
 
 .form-control:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    border-color: var(--focus-ring);
+    box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.18);
 }
 
 textarea.form-control {
@@ -91,7 +93,8 @@ select.form-control {
     }
 
     body {
-        background: white;
+        background: #ffffff !important;
+        color: #1B2430 !important;
         font-size: 10pt;
     }
 }
